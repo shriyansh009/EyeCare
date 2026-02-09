@@ -22,7 +22,8 @@ OPENROUTER_MODEL = "openai/gpt-4o-mini"  # Vision-capable model
 # --------------------------------------------------
 app = Flask(__name__)
 app.secret_key = "any_secret_key"
-UPLOAD_FOLDER = "static/"
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # --------------------------------------------------
@@ -165,4 +166,5 @@ def result():
 # Run app
 # --------------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
