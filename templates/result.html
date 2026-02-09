@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis Result</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen font-sans">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-indigo-800">Analysis Result</h1>
+      <p class="text-gray-600">Based on the image provided</p>
+    </header>
+
+    <!-- Display Uploaded/Captured Image -->
+    <div class="mb-8 flex justify-center">
+      <img src="{{ image_url }}" alt="Analyzed Image" class="rounded shadow-md w-full max-w-md">
+    </div>
+
+    <!-- Diagnosis Details -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      {% if result and result.error %}
+        <p class="text-red-600 font-semibold">Error: {{ result.error }}</p>
+      {% elif result %}
+        <h2 class="text-xl font-semibold text-indigo-700 mb-4">Diagnosis</h2>
+        <p class="mb-4 text-gray-800">{{ result.diagnosis }}</p>
+
+        <h3 class="text-lg font-medium text-indigo-600 mb-2">Description</h3>
+        <p class="mb-4 text-gray-700">{{ result.description }}</p>
+         
+        <h3 class="text-lg font-medium text-indigo-600 mb-2">Symptoms</h3>
+        <p class="mb-4 text-gray-700">{{ result.symptoms }}</p> 
+         
+        <h3 class="text-lg font-medium text-indigo-600 mb-2">Home Remedies</h3>
+        <ul class="list-disc list-inside text-gray-700 mb-4">
+          {% for remedy in result.home_remedies %}
+            <li>{{ remedy }}</li>
+          {% endfor %}
+        </ul>
+
+        <h3 class="text-lg font-medium text-indigo-600 mb-2">Medicines</h3>
+        <ul class="list-disc list-inside text-gray-700">
+          {% for med in result.medicines %}
+            <li>{{ med }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-700">No result available.</p>
+      {% endif %}
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-6 text-center">
+      <a href="/" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">Back to Home</a>
+    </div>
+  </div>
+</body>
+</html>

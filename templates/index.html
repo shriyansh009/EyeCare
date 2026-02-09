@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload or Capture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #dropZone.hover {
+      background-color: #e0e7ff;
+    }
+  </style>
+</head>
+<body class="bg-[url(https://images.pexels.com/photos/40568/medical-appointment-doctor-healthcare-40568.jpeg)] bg-cover bg-center min-h-screen flex items-center justify-center font-sans">
+  <div class="max-w-xl mx-auto px-4 py-10 bg-white rounded-xl shadow-lg w-full">
+    <header class="text-center mb-8">
+      <img class="block mx-auto w-30 h-20 filter invert sepia hue-rotate-180" src="static/bg/logo.png" alt="logo">
+      <p class="text-gray-600">Upload or capture an image for analysis</p>
+    </header>
+
+    <form method="POST" action="/analyze" enctype="multipart/form-data" id="imageForm">
+      <!-- Drag and Drop Upload -->
+      <div id="dropZone" class="mb-4 border-2 border-dashed border-indigo-500 rounded-lg p-8 text-center bg-indigo-50 hover:bg-indigo-100 transition-all cursor-pointer">
+        <p class="text-indigo-700 font-medium">Drag and drop your image here or click to select a file</p>
+        <input type="file" name="image" id="fileInput" accept="image/*" class="hidden">
+      </div>
+
+      <!-- Preview Container -->
+      <div id="previewContainer" class="hidden mb-4">
+        <img id="imagePreview" class="rounded shadow-md w-full max-w-md mx-auto" alt="Image preview">
+      </div>
+
+      <!-- Initial Buttons -->
+      <div class="flex justify-between" id="initialButtons">
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Upload & Analyze</button>
+        <button type="button" id="openCamera" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Capture from Camera</button>
+      </div>
+
+      <!-- Action Buttons (after preview) -->
+      <div id="actionButtons" class="flex justify-between mt-4 hidden">
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Upload & Analyze</button>
+        <button type="button" id="resetCamera" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Reset</button>
+      </div>
+
+      <!-- Hidden camera data input -->
+      <input type="hidden" name="camera_image" id="cameraImage">
+    </form>
+
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold text-gray-800">Camera</h2>
+          <button id="closeCamera" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <video id="video" autoplay playsinline class="w-full rounded mb-4"></video>
+        <div class="flex justify-between">
+          <button id="captureBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Capture</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Script -->
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const form = document.getElementById('imageForm');
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const cameraModal = document.getElementById('cameraModal');
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('captureBtn');
+    const openCamera = document.getElementById('openCamera');
+    const closeCamera = document.getElementById('closeCamera');
+    const resetCamera = document.getElementById('resetCamera');
+    const cameraImage = document.getElementById('cameraImage');
+    const actionButtons = document.getElementById('actionButtons');
+    const initialButtons = document.getElementById('initialButtons');
+    let stream;
+
+    function resetFormState() {
+      previewContainer.classList.add('hidden');
+      imagePreview.src = "";
+      dropZone.classList.remove('hidden');
+      fileInput.value = "";
+      cameraImage.value = "";
+      actionButtons.classList.add('hidden');
+      initialButtons.classList.remove('hidden');
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('hover');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('hover');
+      if (e.dataTransfer.files.length) {
+        const file = e.dataTransfer.files[0];
+        if (!file.type.startsWith("image/")) {
+          alert("Please upload a valid image.");
+          return;
+        }
+        fileInput.files = e.dataTransfer.files;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imagePreview.src = e.target.result;
+          previewContainer.classList.remove('hidden');
+          dropZone.classList.add('hidden');
+          initialButtons.classList.add('hidden');
+          actionButtons.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (!file.type.startsWith("image/")) {
+          alert("Please upload a valid image.");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imagePreview.src = e.target.result;
+          previewContainer.classList.remove('hidden');
+          dropZone.classList.add('hidden');
+          initialButtons.classList.add('hidden');
+          actionButtons.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    openCamera.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        cameraModal.classList.remove('hidden');
+      } catch (err) {
+        alert("Camera access denied or unavailable: " + err.message);
+      }
+    });
+
+    closeCamera.addEventListener('click', () => {
+      cameraModal.classList.add('hidden');
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    });
+
+    captureBtn.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      cameraImage.value = imageData;
+      imagePreview.src = imageData;
+      previewContainer.classList.remove('hidden');
+      dropZone.classList.add('hidden');
+      initialButtons.classList.add('hidden');
+      actionButtons.classList.remove('hidden');
+      cameraModal.classList.add('hidden');
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    });
+
+    resetCamera.addEventListener('click', () => {
+      resetFormState();
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    });
+  </script>
+</body>
+</html>
